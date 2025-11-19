@@ -52,8 +52,8 @@ public partial class WikipediaClient
 
     static string CreateWikipediaUrl(string pageTitle, bool full)
     {
-        var ub = new UriBuilder("https://en.wikipedia.org/w/api.php");
-        var qs = new Dictionary<string, string>
+        var urlBuilder = new UriBuilder("https://en.wikipedia.org/w/api.php");
+        var queryString = new Dictionary<string, string>
         {
             ["action"] = "query",
             ["prop"] = "extracts",
@@ -68,10 +68,10 @@ public partial class WikipediaClient
 
         // If NOT full, only fetch the intro
         if (!full)
-            qs["exintro"] = "1";
+            queryString["exintro"] = "1";
 
-        ub.Query = string.Join("&", qs.Select(kv => $"{WebUtility.UrlEncode(kv.Key)}={WebUtility.UrlEncode(kv.Value)}"));
-        return ub.ToString();
+        urlBuilder.Query = string.Join("&", queryString.Select(kv => $"{WebUtility.UrlEncode(kv.Key)}={WebUtility.UrlEncode(kv.Value)}"));
+        return urlBuilder.ToString();
     }
 
     static async Task<Document> GetWikipediaPage(string url)
