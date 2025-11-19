@@ -1,10 +1,6 @@
-using System;
-using Microsoft.Extensions.AI;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Hosting;
-using Pinecone;
 using ChatBot.Services;
+using Microsoft.Extensions.AI;
+using Pinecone;
 
 namespace ChatBot;
 
@@ -12,8 +8,10 @@ static class Startup
 {
     public static void ConfigureServices(WebApplicationBuilder builder)
     {
-        var openAiKey = builder.RequireEnv("OPENAI_API_KEY");
-        var pineconeKey = builder.RequireEnv("PINECONE_API_KEY");
+        //var deepSeekKey = builder.RequireEnv("OPENAI_API_KEY");
+        var deepSeekKey = builder.RequireEnv("sk-89c9860f10ae4e40b8e1fa7b3eb004cd");
+        //var pineconeKey = builder.RequireEnv("PINECONE_API_KEY");
+        var pineconeKey = builder.RequireEnv("pcsk_tiT86_9o2EYETFgUs6tQPo7ApVsQizxkkrQZjFBDQsJMNw93mxvU3g7rY4eZ8L7hiXtSo");
 
         builder.Services.AddCors(options =>
         {
@@ -25,9 +23,11 @@ static class Startup
             );
         });
 
-        builder.Services.AddSingleton<StringEmbeddingGenerator>(s => new OpenAI.Embeddings.EmbeddingClient(
-                model: "text-embedding-3-small",
-                apiKey: openAiKey
+        //builder.Services.AddSingleton<StringEmbeddingGenerator>(s => new OpenAI.Embeddings.EmbeddingClient(
+        builder.Services.AddSingleton<StringEmbeddingGenerator>(s => new DeepSeekEmbeddingGenerator(
+                //model: "text-embedding-3-small",
+                model: "deepseek-embedding",
+                apiKey: deepSeekKey
             ).AsIEmbeddingGenerator());
 
         builder.Services.AddSingleton<IndexClient>(s => new PineconeClient(pineconeKey).Index("landmark-chunks"));
@@ -44,9 +44,10 @@ static class Startup
         builder.Services.AddSingleton<IChatClient>(sp =>
          {
              var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-             var client = new OpenAI.Chat.ChatClient(
-                  "gpt-5-mini",
-                  openAiKey).AsIChatClient();
+             //var client = new OpenAI.Chat.ChatClient(
+             var client = new DeepSeekChatClient(
+                  "deepseek-chat",
+                  deepSeekKey).AsIChatClient();
 
              return new ChatClientBuilder(client)
                  .UseLogging(loggerFactory)
