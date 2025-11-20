@@ -1,6 +1,9 @@
+using ChatBot.DeepSeek;
 using ChatBot.Services;
 using Microsoft.Extensions.AI;
+using OpenAI;
 using Pinecone;
+using System.ClientModel;
 
 namespace ChatBot;
 
@@ -24,11 +27,29 @@ static class Startup
         });
 
         //builder.Services.AddSingleton<StringEmbeddingGenerator>(s => new OpenAI.Embeddings.EmbeddingClient(
-        builder.Services.AddSingleton<StringEmbeddingGenerator>(s => new DeepSeekEmbeddingGenerator(
-                //model: "text-embedding-3-small",
-                model: "deepseek-embedding",
-                apiKey: deepSeekKey
-            ).AsIEmbeddingGenerator());
+        // Register DeepSeek Embedding generator directly
+        //builder.Services.AddSingleton<StringEmbeddingGenerator>(s => new DeepSeekEmbeddingGenerator(
+        //    apiKey: deepSeekKey,
+        //    model: "deepseek-embedding" // Use correct DeepSeek Embedding model
+        //));
+        builder.Services.AddSingleton<OpenAIClient>(sp =>
+        {
+            return new OpenAIClient(
+                new ApiKeyCredential(deepSeekKey),
+                new OpenAIClientOptions
+                {
+                    Endpoint = new Uri("https://api.deepseek.com") // <--- The Magic: Points standard client to DeepSeek
+                });
+        });
+
+        builder.Services.AddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(sp =>
+        {
+            var openAiClient = sp.GetRequiredService<OpenAIClient>();
+
+            // Use the official "AsEmbeddingGenerator" adapter
+            return openAiClient.GetEmbeddingClient("deepseek-embedding")
+                .AsIEmbeddingGenerator();
+        });
 
         builder.Services.AddSingleton<IndexClient>(s => new PineconeClient(pineconeKey).Index("landmark-chunks"));
 
@@ -42,21 +63,20 @@ static class Startup
             LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information)));
 
         builder.Services.AddSingleton<IChatClient>(sp =>
-         {
-             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-             //var client = new OpenAI.Chat.ChatClient(
-             var client = new DeepSeekChatClient(
-                  "deepseek-chat",
-                  deepSeekKey).AsIChatClient();
+        {
+            var openAiClient = sp.GetRequiredService<OpenAIClient>();
+            var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
 
-             return new ChatClientBuilder(client)
-                 .UseLogging(loggerFactory)
-                 .UseFunctionInvocation(loggerFactory, c =>
-                 {
-                     c.IncludeDetailedErrors = true;
-                 })
-                 .Build(sp);
-         });
+            // Get the low-level client for "deepseek-chat"
+            var chatClient = openAiClient.GetChatClient("deepseek-chat");
+
+            // Build the pipeline using the official builder
+            return new ChatClientBuilder(chatClient.AsIChatClient()) // Adapts OpenAI to Microsoft.Extensions.AI
+                .UseFunctionInvocation(loggerFactory)                 // <--- Handles Tool Calls automatically!
+                .UseLogging(loggerFactory)
+                .Build();
+        });
+
 
         builder.Services.AddTransient<ChatOptions>(sp => new ChatOptions
         {
