@@ -2,5 +2,5 @@
 
 public class DeepSeekChatResponse
 {
-    public List<DeepSeekChoice> Choices { get; set; }
+    public List<DeepSeekChoice> Choices { get; set; } = new();
 }

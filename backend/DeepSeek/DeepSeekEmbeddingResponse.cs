@@ -2,5 +2,5 @@
 
 public class DeepSeekEmbeddingResponse
 {
-    public List<DeepSeekEmbeddingData> Data { get; set; }
+    public DeepSeekEmbeddingData[] Data { get; set; } = Array.Empty<DeepSeekEmbeddingData>();
 }

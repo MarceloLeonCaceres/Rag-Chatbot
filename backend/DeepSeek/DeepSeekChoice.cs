@@ -2,5 +2,5 @@
 
 public class DeepSeekChoice
 {
-    public DeepSeekMessage Message { get; set; }
+    public DeepSeekMessage Message { get; set; } = new();
 }

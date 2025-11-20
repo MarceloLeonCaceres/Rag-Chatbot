@@ -2,5 +2,5 @@
 
 public class DeepSeekEmbeddingData
 {
-    public float[] embedding { get; set; }
+    public float[] Embedding { get; set; } = Array.Empty<float>();
 }
