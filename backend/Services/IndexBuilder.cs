@@ -26,7 +26,7 @@ public class IndexBuilder(
 
             var stringsToEmbed = chunks.Select(c => $"{c.Title} > {c.Section}\n\n{c.Content}");
 
-            // Makes a call to OpenAI to create an embedding from these strings
+            // Makes a call to OpenAI to create an Embedding from these strings
             var embeddings = await embeddingGenerator.GenerateAsync(
                 stringsToEmbed,
                 new EmbeddingGenerationOptions { Dimensions = 512 }

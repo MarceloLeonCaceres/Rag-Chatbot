@@ -51,7 +51,7 @@ public class VectorSearchServiceWithHyde(
             new EmbeddingGenerationOptions { Dimensions = 512 }
         );
 
-        // 3) Use the single embedding as the search vector
+        // 3) Use the single Embedding as the search vector
         var vector = embs[0].Vector.ToArray();
 
         var response = await pineconeIndex.QueryAsync(new Pinecone.QueryRequest
